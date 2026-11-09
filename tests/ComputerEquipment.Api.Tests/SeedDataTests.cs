@@ -10,6 +10,7 @@ namespace ComputerEquipment.Api.Tests;
 /// </summary>
 public class SeedDataTests
 {
+    /// <summary>В словарь добавляется от 3 до 5 типов, как требует задание, и все они разные.</summary>
     [Fact]
     public void DefaultTypes_AreBetween3And5AndUnique()
     {
@@ -18,18 +19,21 @@ public class SeedDataTests
         Assert.Equal(DbInitializer.DefaultTypes.Length, DbInitializer.DefaultTypes.Distinct().Count());
     }
 
+    /// <summary>Названия типов по умолчанию проходят валидацию.</summary>
     [Fact]
     public void DefaultTypes_PassValidation()
     {
         Assert.All(DbInitializer.DefaultTypes, name => Assert.Empty(EquipmentRules.ValidateTypeName(name)));
     }
 
+    /// <summary>При первом запуске добавляется 50 демо-записей.</summary>
     [Fact]
     public void DefaultItems_Contain50Records()
     {
         Assert.Equal(50, DbInitializer.DefaultItems.Length);
     }
 
+    /// <summary>Учетные номера демо-записей не повторяются, иначе заполнение упадет на уникальном индексе.</summary>
     [Fact]
     public void DefaultItems_HaveUniqueInventoryNumbers()
     {
@@ -38,12 +42,14 @@ public class SeedDataTests
         Assert.Equal(numbers.Count, numbers.Distinct().Count());
     }
 
+    /// <summary>Каждая демо-запись ссылается на тип из словаря по умолчанию.</summary>
     [Fact]
     public void DefaultItems_ReferenceExistingTypes()
     {
         Assert.All(DbInitializer.DefaultItems, i => Assert.Contains(i.Type, DbInitializer.DefaultTypes));
     }
 
+    /// <summary>Все демо-записи проходят валидацию и уже записаны в верхнем регистре, как того требует CHECK-ограничение.</summary>
     [Fact]
     public void DefaultItems_PassValidation()
     {

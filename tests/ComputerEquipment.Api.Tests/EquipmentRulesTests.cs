@@ -10,6 +10,7 @@ public class EquipmentRulesTests
     private static EquipmentRequest Valid(uint? version = null) =>
         new("PC0001", "Dell OptiPlex 7010", TypeId: 1, Room: 101, Version: version);
 
+    /// <summary>Нормализация убирает пробелы по краям и переводит учетный номер в верхний регистр.</summary>
     [Fact]
     public void Normalize_TrimsAndUppercasesInventoryNumber()
     {
@@ -19,6 +20,7 @@ public class EquipmentRulesTests
         Assert.Equal("Монитор", result.Name);
     }
 
+    /// <summary>Отсутствующие строки заменяются пустыми, чтобы валидация не падала на null.</summary>
     [Fact]
     public void Normalize_ReplacesNullStringsWithEmpty()
     {
@@ -28,6 +30,7 @@ public class EquipmentRulesTests
         Assert.Equal(string.Empty, result.Name);
     }
 
+    /// <summary>Нормализация не меняет тип, комнату и версию.</summary>
     [Fact]
     public void Normalize_KeepsOtherFields()
     {
@@ -38,12 +41,14 @@ public class EquipmentRulesTests
         Assert.Equal(42u, result.Version);
     }
 
+    /// <summary>Корректная запись проходит валидацию без ошибок.</summary>
     [Fact]
     public void Validate_ValidRequest_ReturnsNoErrors()
     {
         Assert.Empty(EquipmentRules.Validate(Valid(), requireVersion: false));
     }
 
+    /// <summary>Учетный номер из цифр и латинских букв длиной от 1 до 32 символов допустим.</summary>
     [Theory]
     [InlineData("A")]
     [InlineData("0")]
@@ -56,6 +61,7 @@ public class EquipmentRulesTests
         Assert.DoesNotContain("inventoryNumber", errors.Keys);
     }
 
+    /// <summary>Пустой номер, кириллица, спецсимволы и номер длиннее 32 символов отклоняются.</summary>
     [Theory]
     [InlineData("")]
     [InlineData("ПК0001")]       // кириллица
@@ -70,6 +76,7 @@ public class EquipmentRulesTests
         Assert.Contains("inventoryNumber", errors.Keys);
     }
 
+    /// <summary>В наименовании допустимы любые символы.</summary>
     [Fact]
     public void Validate_AcceptsAnyCharactersInName()
     {
@@ -78,6 +85,7 @@ public class EquipmentRulesTests
         Assert.DoesNotContain("name", EquipmentRules.Validate(request, requireVersion: false).Keys);
     }
 
+    /// <summary>Наименование ровно из 256 символов допустимо.</summary>
     [Fact]
     public void Validate_AcceptsNameOfMaxLength()
     {
@@ -86,6 +94,7 @@ public class EquipmentRulesTests
         Assert.DoesNotContain("name", EquipmentRules.Validate(request, requireVersion: false).Keys);
     }
 
+    /// <summary>Пустое наименование и наименование длиннее 256 символов отклоняются.</summary>
     [Theory]
     [InlineData(0)]
     [InlineData(EquipmentRules.NameMaxLength + 1)]
@@ -96,6 +105,7 @@ public class EquipmentRulesTests
         Assert.Contains("name", EquipmentRules.Validate(request, requireVersion: false).Keys);
     }
 
+    /// <summary>Тип техники обязателен, а его идентификатор должен быть положительным.</summary>
     [Theory]
     [InlineData(null)]
     [InlineData(0)]
@@ -107,6 +117,7 @@ public class EquipmentRulesTests
         Assert.Contains("typeId", errors.Keys);
     }
 
+    /// <summary>Комнаты 1, 1000 и значения между ними допустимы.</summary>
     [Theory]
     [InlineData(EquipmentRules.RoomMin)]
     [InlineData(500)]
@@ -118,6 +129,7 @@ public class EquipmentRulesTests
         Assert.DoesNotContain("room", errors.Keys);
     }
 
+    /// <summary>Комната обязательна и не может выходить за диапазон от 1 до 1000.</summary>
     [Theory]
     [InlineData(null)]
     [InlineData(0)]
@@ -130,6 +142,7 @@ public class EquipmentRulesTests
         Assert.Contains("room", errors.Keys);
     }
 
+    /// <summary>При изменении записи версия обязательна — без нее нельзя проверить, не изменил ли запись другой пользователь.</summary>
     [Fact]
     public void Validate_RequiresVersionForUpdate()
     {
@@ -137,12 +150,14 @@ public class EquipmentRulesTests
         Assert.DoesNotContain("version", EquipmentRules.Validate(Valid(version: 5), requireVersion: true).Keys);
     }
 
+    /// <summary>При создании записи версия не нужна.</summary>
     [Fact]
     public void Validate_DoesNotRequireVersionForCreate()
     {
         Assert.DoesNotContain("version", EquipmentRules.Validate(Valid(version: null), requireVersion: false).Keys);
     }
 
+    /// <summary>Валидация возвращает ошибки по всем неверным полям сразу, а не только по первому.</summary>
     [Fact]
     public void Validate_ReportsAllInvalidFieldsAtOnce()
     {
@@ -151,6 +166,7 @@ public class EquipmentRulesTests
         Assert.Equal(new[] { "inventoryNumber", "name", "room", "typeId", "version" }, errors.Keys.Order());
     }
 
+    /// <summary>Непустое название типа допустимо.</summary>
     [Theory]
     [InlineData("Ноутбук")]
     [InlineData("x")]
@@ -159,12 +175,14 @@ public class EquipmentRulesTests
         Assert.Empty(EquipmentRules.ValidateTypeName(name));
     }
 
+    /// <summary>Название типа ровно из 128 символов допустимо.</summary>
     [Fact]
     public void ValidateTypeName_AcceptsNameOfMaxLength()
     {
         Assert.Empty(EquipmentRules.ValidateTypeName(new string('x', EquipmentRules.TypeNameMaxLength)));
     }
 
+    /// <summary>Пустое название типа и название длиннее 128 символов отклоняются.</summary>
     [Theory]
     [InlineData(0)]
     [InlineData(EquipmentRules.TypeNameMaxLength + 1)]

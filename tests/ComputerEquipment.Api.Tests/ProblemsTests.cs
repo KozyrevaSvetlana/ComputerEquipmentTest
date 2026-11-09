@@ -20,6 +20,7 @@ public class ProblemsTests
     /// <summary>Так EF Core оборачивает ошибку базы при SaveChanges.</summary>
     private static DbUpdateException Wrap(Exception inner) => new("save failed", inner);
 
+    /// <summary>Ошибка PostgreSQL 23505 на индексе учетного номера распознается как дубль номера.</summary>
     [Fact]
     public void IsUniqueViolation_SameIndex_ReturnsTrue()
     {
@@ -28,6 +29,7 @@ public class ProblemsTests
         Assert.True(ex.IsUniqueViolation(AppDbContext.InventoryNumberIndex));
     }
 
+    /// <summary>Нарушение другого уникального индекса не считается дублем учетного номера.</summary>
     [Fact]
     public void IsUniqueViolation_OtherIndex_ReturnsFalse()
     {
@@ -36,6 +38,7 @@ public class ProblemsTests
         Assert.False(ex.IsUniqueViolation(AppDbContext.InventoryNumberIndex));
     }
 
+    /// <summary>Ошибка с другим кодом PostgreSQL не считается нарушением уникальности.</summary>
     [Fact]
     public void IsUniqueViolation_OtherSqlState_ReturnsFalse()
     {
@@ -44,12 +47,14 @@ public class ProblemsTests
         Assert.False(ex.IsUniqueViolation(AppDbContext.InventoryNumberIndex));
     }
 
+    /// <summary>Ошибка, не связанная с PostgreSQL, не считается нарушением уникальности.</summary>
     [Fact]
     public void IsUniqueViolation_NotPostgresError_ReturnsFalse()
     {
         Assert.False(Wrap(new InvalidOperationException()).IsUniqueViolation(AppDbContext.InventoryNumberIndex));
     }
 
+    /// <summary>Ошибка внешнего ключа распознается без обертки — так ее выбрасывает ExecuteDelete.</summary>
     [Fact]
     public void IsForeignKeyViolation_DirectPostgresException_ReturnsTrue()
     {
@@ -57,12 +62,14 @@ public class ProblemsTests
         Assert.True(Pg(PostgresErrorCodes.ForeignKeyViolation).IsForeignKeyViolation());
     }
 
+    /// <summary>Ошибка внешнего ключа распознается внутри DbUpdateException — так ее выбрасывает SaveChanges.</summary>
     [Fact]
     public void IsForeignKeyViolation_WrappedPostgresException_ReturnsTrue()
     {
         Assert.True(Wrap(Pg(PostgresErrorCodes.ForeignKeyViolation)).IsForeignKeyViolation());
     }
 
+    /// <summary>Другие ошибки не считаются нарушением внешнего ключа.</summary>
     [Fact]
     public void IsForeignKeyViolation_OtherErrors_ReturnFalse()
     {
@@ -70,6 +77,7 @@ public class ProblemsTests
         Assert.False(new InvalidOperationException().IsForeignKeyViolation());
     }
 
+    /// <summary>Ответ о конфликте имеет код 409, заголовок, описание и машиночитаемый код в поле <c>code</c>.</summary>
     [Fact]
     public void Conflict_Returns409WithCode()
     {
@@ -81,6 +89,7 @@ public class ProblemsTests
         Assert.Equal("duplicate", result.ProblemDetails.Extensions["code"]);
     }
 
+    /// <summary>Ответ «не найдено» имеет код 404 и описание.</summary>
     [Fact]
     public void NotFound_Returns404()
     {
@@ -90,6 +99,7 @@ public class ProblemsTests
         Assert.Equal("нет записи", result.ProblemDetails.Detail);
     }
 
+    /// <summary>Ответ о некорректном запросе имеет код 400.</summary>
     [Fact]
     public void BadRequest_Returns400()
     {

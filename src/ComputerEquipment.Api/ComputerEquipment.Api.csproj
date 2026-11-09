@@ -13,6 +13,10 @@
 
   <ItemGroup>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <!-- Явная версия EF Core: Design ниже подтягивает 10.0.13, но с PrivateAssets=all не передает ее
+         в проект тестов, и тесты получили бы 10.0.4 от Npgsql. Версии должны совпадать с Design. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.13" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.13" />
     <!-- Нужен только для команд dotnet ef (миграции), в публикацию не попадает. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13">
       <PrivateAssets>all</PrivateAssets>
