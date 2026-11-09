@@ -16,7 +16,7 @@ namespace ComputerEquipment.Api.Endpoints;
 internal static class EquipmentQuery
 {
     /// <summary>Размер страницы, если клиент его не передал.</summary>
-    public const int DefaultPageSize = 20;
+    public const int DefaultPageSize = 10;
 
     /// <summary>Максимальный размер страницы: защищает сервер от запроса всех записей разом.</summary>
     public const int MaxPageSize = 100;

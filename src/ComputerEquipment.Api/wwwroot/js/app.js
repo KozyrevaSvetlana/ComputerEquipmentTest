@@ -129,7 +129,7 @@
     columnAutoWidth: true,
     wordWrapEnabled: true,
     sorting: { mode: 'multiple' },
-    paging: { pageSize: 20 },
+    paging: { pageSize: 10 },
     pager: {
       visible: true,
       showPageSizeSelector: true,
