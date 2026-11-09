@@ -16,16 +16,18 @@ docker compose up --build
 
 Откройте http://localhost:8080. Поднимутся PostgreSQL 18 и сервер. При старте сервер применяет миграции и заполняет начальные данные.
 
+Перед публикацией сервера при сборке образа запускаются юнит-тесты. Если хоть один тест упадет, сборка остановится и контейнер не запустится — результат тестов виден в выводе `docker compose up --build`. Чтобы собрать образ без тестов (например, для быстрой проверки верстки):
+
+```bash
+docker compose build --build-arg SKIP_TESTS=true
+docker compose up
+```
+
 ### Вариант 2. Локально (Visual Studio / dotnet CLI)
 
 1. Нужны .NET 10 SDK и PostgreSQL 18. PostgreSQL можно установить локально или поднять только БД в Docker: `docker compose up db`.
    Базу `equipment` создавать вручную не нужно — ее создадут миграции при первом запуске.
-2. Укажите пароль к PostgreSQL. По умолчанию в `appsettings.json` стоит `postgres`; свой пароль лучше хранить в user-secrets, чтобы он не попал в репозиторий:
-
-   ```bash
-   cd src/ComputerEquipment.Api
-   dotnet user-secrets set "ConnectionStrings:Default" "Host=localhost;Port=5432;Database=equipment;Username=postgres;Password=ВАШ_ПАРОЛЬ"
-   ```
+2. **Положите строку подключения к БД в секреты пользователя** — подробно в разделе [«Подключение к базе данных»](#подключение-к-базе-данных) ниже. Без этого шага сервер попробует подключиться с паролем `postgres` из `appsettings.json` и упадет с ошибкой `password authentication failed`, если у вас другой пароль.
 
 3. Запустите проект `ComputerEquipment.Api` (профиль `http`) или выполните:
 
@@ -34,6 +36,47 @@ docker compose up --build
    ```
 
 4. Откройте http://localhost:5080. Фронтенд отдельно запускать не нужно: его раздает тот же сервер.
+
+### Подключение к базе данных
+
+Строка подключения читается из `ConnectionStrings:Default`. Пароль от своей БД не нужно вписывать в `appsettings.json`: файл лежит в репозитории, и пароль уйдет в git. Для локального запуска строка подключения хранится в **секретах пользователя** (user-secrets). Проект к ним уже подключен: в `ComputerEquipment.Api.csproj` указан `UserSecretsId`.
+
+**Через командную строку** (из корня репозитория):
+
+```bash
+dotnet user-secrets set "ConnectionStrings:Default" "Host=localhost;Port=5432;Database=equipment;Username=postgres;Password=ВАШ_ПАРОЛЬ" --project src/ComputerEquipment.Api
+```
+
+**Через Visual Studio:** правой кнопкой по проекту `ComputerEquipment.Api` → «Управление секретами пользователя» (Manage User Secrets). Откроется `secrets.json`, впишите в него:
+
+```json
+{
+  "ConnectionStrings": {
+    "Default": "Host=localhost;Port=5432;Database=equipment;Username=postgres;Password=ВАШ_ПАРОЛЬ"
+  }
+}
+```
+
+Что подставить:
+
+| Параметр | Значение |
+|---|---|
+| `Host`, `Port` | адрес и порт PostgreSQL, обычно `localhost` и `5432` |
+| `Database` | `equipment` — базу создавать не нужно, ее создадут миграции |
+| `Username`, `Password` | пользователь и пароль, заданные при установке PostgreSQL |
+
+Проверить, что секрет сохранен:
+
+```bash
+dotnet user-secrets list --project src/ComputerEquipment.Api
+```
+
+Важно:
+- Секреты лежат вне репозитория: `%APPDATA%\Microsoft\UserSecrets\<UserSecretsId>\secrets.json` в Windows, `~/.microsoft/usersecrets/<UserSecretsId>/secrets.json` в Linux и macOS. На каждом компьютере их нужно задать заново.
+- Секреты читаются только в среде `Development`. Профиль `http` из `launchSettings.json` ее и задает — и в Visual Studio, и при `dotnet run`. Если запускаете собранный `.dll` напрямую, передайте строку подключения переменной окружения `ConnectionStrings__Default`.
+- Значение из секретов перекрывает `appsettings.json`; строка `Password=postgres` там оставлена только как значение по умолчанию.
+- При запуске через Docker секреты не нужны: строка подключения задается в `docker-compose.yml` переменной `ConnectionStrings__Default`.
+- Юнит-тестам подключение к БД не нужно.
 
 ## Миграции
 
@@ -165,6 +208,7 @@ tests/ComputerEquipment.Api.Tests/  юнит-тесты (xUnit)
 8. **Рефакторинг для тестов.** Разбор `sort`, сортировка, пагинация и экранирование поиска вынесены из эндпоинта в `Endpoints/EquipmentQuery.cs`. В `Problems` добавлен `IsForeignKeyViolation`, который распознает ошибку внешнего ключа и от `SaveChanges`, и от `ExecuteDelete`.
 9. **Юнит-тесты.** Проект `tests/ComputerEquipment.Api.Tests` (xUnit): правила валидации, построение запроса, распознавание ошибок PostgreSQL, модель EF Core и соответствие миграций, начальные данные.
 10. **Размер страницы.** По умолчанию таблица показывает 10 записей на странице (`paging.pageSize` в `wwwroot/js/app.js`).
+11. **Тесты в Docker.** При сборке образа перед `dotnet publish` выполняется `dotnet test`; упавший тест останавливает сборку. Пропустить тесты можно аргументом `SKIP_TESTS=true`.
 
 ## Замечания
 
