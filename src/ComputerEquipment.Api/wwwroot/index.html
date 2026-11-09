@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Учет компьютерной техники</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdn3.devexpress.com/jslib/25.2.5/css/dx.fluent.blue.light.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body class="dx-viewport">
+  <header class="app-header">
+    <div class="app-header__inner">
+      <div class="app-brand">
+        <span class="app-brand__mark" aria-hidden="true"></span>
+        <span class="app-brand__title">Учет компьютерной техники</span>
+      </div>
+      <div class="app-counter" id="counter" title="Записей в базе / лимит"></div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="catalog" aria-label="Каталог по типам техники">
+      <div class="catalog__head">
+        <h2 class="catalog__title">Каталог</h2>
+        <div class="catalog__actions">
+          <div id="add-type-button"></div>
+          <div id="delete-type-button"></div>
+        </div>
+      </div>
+      <div id="catalog-list"></div>
+    </aside>
+
+    <section class="content">
+      <div class="content__head">
+        <h1 class="content__title" id="content-title">Вся техника</h1>
+      </div>
+      <div class="card">
+        <div id="grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <div class="app-footer__inner">
+      <div class="app-footer__col">
+        <h3 class="app-footer__title">Учет техники</h3>
+        <p>Тестовое задание: модуль ведения БД компьютерной техники.</p>
+      </div>
+      <div class="app-footer__col">
+        <h3 class="app-footer__title">Технологии</h3>
+        <p>.NET 10 Minimal API · PostgreSQL 18 · DevExtreme</p>
+      </div>
+    </div>
+  </footer>
+
+  <div id="editor-popup"></div>
+  <div id="type-popup"></div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn3.devexpress.com/jslib/25.2.5/js/dx.all.js"></script>
+  <script src="https://cdn3.devexpress.com/jslib/25.2.5/js/localization/dx.messages.ru.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,279 @@
+/*
+  Тема приложения: бирюзовые акценты, светлые заголовки капсом,
+  прямоугольные кнопки, графитовый подвал.
+  Чтобы перекрасить интерфейс, достаточно поменять переменные в :root.
+*/
+:root {
+  --brand: #1a9bbf;          /* бирюзовый: кнопки, ссылки, акценты */
+  --brand-dark: #137c99;     /* наведение и нажатие */
+  --brand-light: #e4f3f8;    /* фон выбранного пункта каталога */
+  --brand-soft: #8cc3d1;     /* светлая часть градиента шапки */
+  --accent: #e0533a;         /* второй акцент: метка в шапке */
+  --bg: #ffffff;             /* фон страницы */
+  --surface: #ffffff;        /* карточки и панели */
+  --surface-alt: #f4f8fa;    /* чередование строк, подложки */
+  --dark: #333333;           /* подвал */
+  --text: #3a3a3a;
+  --text-muted: #7a7a7a;
+  --border: #e3e8eb;
+  --radius: 0;               /* прямые углы, как у кнопок на сайте */
+  --font: "Open Sans", "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+}
+
+body { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* DevExtreme по умолчанию задает свой шрифт — заменяем на общий */
+.dx-widget,
+.dx-widget input,
+.dx-widget textarea,
+.dx-overlay-content { font-family: var(--font); }
+
+/* ---------- Шапка: бирюзовая полоса с мягким градиентом ---------- */
+.app-header {
+  color: #fff;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 6px),
+    linear-gradient(100deg, var(--brand-soft) 0%, var(--brand) 55%, var(--brand-dark) 100%);
+}
+
+.app-header__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.app-brand { display: flex; align-items: center; gap: 14px; }
+
+.app-brand__mark {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  border-right-color: var(--accent);
+}
+
+.app-brand__title {
+  font-size: 20px;
+  font-weight: 300;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.app-counter {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+}
+
+.app-counter--full { background: var(--accent); }
+
+/* ---------- Раскладка ---------- */
+.layout {
+  flex: 1;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 40px 24px 56px;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+/* Заголовки — тонкие, капсом, как «РАЗРАБОТКА» / «СОПРОВОЖДЕНИЕ» */
+.catalog__title,
+.content__title {
+  margin: 0;
+  font-weight: 300;
+  text-transform: uppercase;
+  color: #444;
+  letter-spacing: 0.3px;
+}
+
+.content__title { font-size: 28px; }
+.catalog__title { font-size: 20px; }
+
+/* ---------- Каталог ---------- */
+.catalog { position: sticky; top: 24px; }
+
+.catalog__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  margin-bottom: 8px;
+  border-bottom: 2px solid var(--brand);
+}
+
+.catalog__actions { display: flex; gap: 2px; }
+
+.catalog-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.catalog-item__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.catalog-item__count {
+  min-width: 30px;
+  padding: 2px 8px;
+  background: var(--surface-alt);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+#catalog-list .dx-list-item { border-top: none; border-left: 3px solid transparent; }
+#catalog-list .dx-list-item.dx-state-hover { background: var(--surface-alt); }
+#catalog-list .dx-list-item.dx-list-item-selected {
+  background: var(--brand-light);
+  border-left-color: var(--brand);
+  color: var(--brand-dark);
+  font-weight: 600;
+}
+#catalog-list .dx-list-item.dx-list-item-selected .catalog-item__count { background: var(--brand); color: #fff; }
+
+/* ---------- Таблица ---------- */
+.content__head { margin-bottom: 16px; }
+
+.card {
+  background: var(--surface);
+  border-top: 2px solid var(--brand);
+  padding-top: 8px;
+}
+
+#grid .dx-datagrid-headers {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #555;
+}
+#grid .dx-datagrid-rowsview .dx-row-alt > td { background: var(--surface-alt); }
+#grid .dx-data-row { cursor: pointer; }
+#grid .dx-data-row.dx-state-hover > td { background: var(--brand-light) !important; }
+#grid .dx-link,
+#grid .dx-command-edit .dx-link { color: var(--brand); }
+#grid .dx-sort { color: var(--brand); }
+
+.inventory-number { font-weight: 700; color: var(--brand-dark); letter-spacing: 0.3px; }
+
+/* Пейджер */
+.dx-pager .dx-pages .dx-selection,
+.dx-pager .dx-page-sizes .dx-selection { background: var(--brand); color: #fff; border-radius: 0; }
+
+/* ---------- Кнопки: прямоугольные, бирюзовые, текст капсом ---------- */
+.dx-button { border-radius: var(--radius); }
+
+.dx-button-mode-contained.dx-button-default {
+  background-color: var(--brand);
+  border-color: var(--brand);
+}
+.dx-button-mode-contained.dx-button-default .dx-button-text {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.dx-button-mode-contained.dx-button-default.dx-state-hover,
+.dx-button-mode-contained.dx-button-default.dx-state-focused { background-color: var(--brand-dark); }
+.dx-button-mode-contained.dx-button-default.dx-state-active { background-color: #0f6680; }
+
+.dx-button-mode-text .dx-icon { color: var(--brand); }
+
+/* Поля ввода и выпадающие списки */
+.dx-texteditor { border-radius: var(--radius); }
+.dx-texteditor.dx-state-focused::after { border-bottom-color: var(--brand); }
+.dx-texteditor.dx-state-focused.dx-editor-outlined { border-color: var(--brand); }
+.dx-list-item.dx-list-item-selected,
+.dx-list .dx-list-item.dx-state-focused { background-color: var(--brand-light); }
+
+/* Диалоги */
+.dx-popup-wrapper > .dx-overlay-content { border-radius: var(--radius); }
+.dx-popup-title {
+  border-bottom: 2px solid var(--brand);
+}
+.dx-popup-title .dx-toolbar-label {
+  font-weight: 300;
+  font-size: 20px;
+  text-transform: uppercase;
+  color: #444;
+}
+.dx-form .dx-field-item-label-text {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #555;
+}
+
+/* Ошибка в диалоге */
+.form-error {
+  display: none;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  background: #fdf0ed;
+  color: #8a2a17;
+  font-size: 14px;
+  white-space: pre-line;
+}
+
+.form-error--visible { display: block; }
+
+/* ---------- Подвал ---------- */
+.app-footer {
+  background: var(--dark);
+  color: #fff;
+}
+
+.app-footer__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 36px 24px 40px;
+  display: flex;
+  gap: 64px;
+  flex-wrap: wrap;
+}
+
+.app-footer__title {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 300;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+
+.app-footer p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  line-height: 1.5;
+  color: #ddd;
+  max-width: 340px;
+}
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; padding: 24px 16px 40px; }
+  .catalog { position: static; }
+  .app-footer__inner { gap: 24px; }
+}

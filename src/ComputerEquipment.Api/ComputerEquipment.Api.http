@@ -1,0 +1,40 @@
+@host = http://localhost:5080
+
+### Каталог: типы техники с количеством, общее число записей и лимит
+GET {{host}}/api/catalog
+
+### Первая страница, сортировка по типу (убыв.). sort = [{"selector":"typeName","desc":true}] в URL-кодировке
+GET {{host}}/api/equipment?skip=0&take=5&sort=%5B%7B%22selector%22%3A%22typeName%22%2C%22desc%22%3Atrue%7D%5D
+
+### Только ноутбуки (подставьте id типа из /api/catalog)
+GET {{host}}/api/equipment?typeId=2
+
+### Создание записи
+POST {{host}}/api/equipment
+Content-Type: application/json
+
+{ "inventoryNumber": "pc0003", "name": "Lenovo ThinkCentre M70q", "typeId": 1, "room": 104 }
+
+### Повтор того же номера -> 409 duplicate
+POST {{host}}/api/equipment
+Content-Type: application/json
+
+{ "inventoryNumber": "PC0003", "name": "Дубль", "typeId": 1, "room": 104 }
+
+### Ошибки валидации -> 400
+POST {{host}}/api/equipment
+Content-Type: application/json
+
+{ "inventoryNumber": "ПК-1", "name": "", "typeId": 1, "room": 5000 }
+
+### Изменение: version берется из GET /api/equipment/{id}. Устаревшая версия -> 409 concurrency
+PUT {{host}}/api/equipment/1
+Content-Type: application/json
+
+{ "inventoryNumber": "PC0001", "name": "Dell OptiPlex 7010 (16 ГБ)", "typeId": 1, "room": 101, "version": 1 }
+
+### Новый тип техники
+POST {{host}}/api/equipment-types
+Content-Type: application/json
+
+{ "name": "ИБП" }

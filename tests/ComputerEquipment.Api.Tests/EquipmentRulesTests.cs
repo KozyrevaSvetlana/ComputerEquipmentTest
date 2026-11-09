@@ -1,0 +1,175 @@
+using ComputerEquipment.Api.Contracts;
+using ComputerEquipment.Api.Domain;
+
+namespace ComputerEquipment.Api.Tests;
+
+/// <summary>Тесты нормализации и валидации полей записи о технике.</summary>
+public class EquipmentRulesTests
+{
+    /// <summary>Корректный запрос, от которого тесты меняют по одному полю.</summary>
+    private static EquipmentRequest Valid(uint? version = null) =>
+        new("PC0001", "Dell OptiPlex 7010", TypeId: 1, Room: 101, Version: version);
+
+    [Fact]
+    public void Normalize_TrimsAndUppercasesInventoryNumber()
+    {
+        var result = EquipmentRules.Normalize(new EquipmentRequest("  pc01a ", "  Монитор  ", 1, 5, null));
+
+        Assert.Equal("PC01A", result.InventoryNumber);
+        Assert.Equal("Монитор", result.Name);
+    }
+
+    [Fact]
+    public void Normalize_ReplacesNullStringsWithEmpty()
+    {
+        var result = EquipmentRules.Normalize(new EquipmentRequest(null, null, null, null, null));
+
+        Assert.Equal(string.Empty, result.InventoryNumber);
+        Assert.Equal(string.Empty, result.Name);
+    }
+
+    [Fact]
+    public void Normalize_KeepsOtherFields()
+    {
+        var result = EquipmentRules.Normalize(new EquipmentRequest("a", "b", 3, 7, 42));
+
+        Assert.Equal(3, result.TypeId);
+        Assert.Equal(7, result.Room);
+        Assert.Equal(42u, result.Version);
+    }
+
+    [Fact]
+    public void Validate_ValidRequest_ReturnsNoErrors()
+    {
+        Assert.Empty(EquipmentRules.Validate(Valid(), requireVersion: false));
+    }
+
+    [Theory]
+    [InlineData("A")]
+    [InlineData("0")]
+    [InlineData("AB12cd34")]
+    [InlineData("ABCDEFGHIJKLMNOPQRSTUVWXYZ012345")] // ровно 32 символа
+    public void Validate_AcceptsCorrectInventoryNumber(string number)
+    {
+        var errors = EquipmentRules.Validate(Valid() with { InventoryNumber = number }, requireVersion: false);
+
+        Assert.DoesNotContain("inventoryNumber", errors.Keys);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("ПК0001")]       // кириллица
+    [InlineData("PC-0001")]      // дефис
+    [InlineData("PC 0001")]      // пробел
+    [InlineData("PC_0001")]      // подчеркивание
+    [InlineData("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456")] // 33 символа
+    public void Validate_RejectsIncorrectInventoryNumber(string number)
+    {
+        var errors = EquipmentRules.Validate(Valid() with { InventoryNumber = number }, requireVersion: false);
+
+        Assert.Contains("inventoryNumber", errors.Keys);
+    }
+
+    [Fact]
+    public void Validate_AcceptsAnyCharactersInName()
+    {
+        var request = Valid() with { Name = "Монитор 27\" (каб. №5) — запасной; ½ & <тест>" };
+
+        Assert.DoesNotContain("name", EquipmentRules.Validate(request, requireVersion: false).Keys);
+    }
+
+    [Fact]
+    public void Validate_AcceptsNameOfMaxLength()
+    {
+        var request = Valid() with { Name = new string('x', EquipmentRules.NameMaxLength) };
+
+        Assert.DoesNotContain("name", EquipmentRules.Validate(request, requireVersion: false).Keys);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(EquipmentRules.NameMaxLength + 1)]
+    public void Validate_RejectsEmptyOrTooLongName(int length)
+    {
+        var request = Valid() with { Name = new string('x', length) };
+
+        Assert.Contains("name", EquipmentRules.Validate(request, requireVersion: false).Keys);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Validate_RejectsMissingOrInvalidTypeId(int? typeId)
+    {
+        var errors = EquipmentRules.Validate(Valid() with { TypeId = typeId }, requireVersion: false);
+
+        Assert.Contains("typeId", errors.Keys);
+    }
+
+    [Theory]
+    [InlineData(EquipmentRules.RoomMin)]
+    [InlineData(500)]
+    [InlineData(EquipmentRules.RoomMax)]
+    public void Validate_AcceptsRoomInRange(int room)
+    {
+        var errors = EquipmentRules.Validate(Valid() with { Room = room }, requireVersion: false);
+
+        Assert.DoesNotContain("room", errors.Keys);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0)]
+    [InlineData(-10)]
+    [InlineData(1001)]
+    public void Validate_RejectsMissingOrOutOfRangeRoom(int? room)
+    {
+        var errors = EquipmentRules.Validate(Valid() with { Room = room }, requireVersion: false);
+
+        Assert.Contains("room", errors.Keys);
+    }
+
+    [Fact]
+    public void Validate_RequiresVersionForUpdate()
+    {
+        Assert.Contains("version", EquipmentRules.Validate(Valid(version: null), requireVersion: true).Keys);
+        Assert.DoesNotContain("version", EquipmentRules.Validate(Valid(version: 5), requireVersion: true).Keys);
+    }
+
+    [Fact]
+    public void Validate_DoesNotRequireVersionForCreate()
+    {
+        Assert.DoesNotContain("version", EquipmentRules.Validate(Valid(version: null), requireVersion: false).Keys);
+    }
+
+    [Fact]
+    public void Validate_ReportsAllInvalidFieldsAtOnce()
+    {
+        var errors = EquipmentRules.Validate(new EquipmentRequest("", "", null, null, null), requireVersion: true);
+
+        Assert.Equal(new[] { "inventoryNumber", "name", "room", "typeId", "version" }, errors.Keys.Order());
+    }
+
+    [Theory]
+    [InlineData("Ноутбук")]
+    [InlineData("x")]
+    public void ValidateTypeName_AcceptsCorrectName(string name)
+    {
+        Assert.Empty(EquipmentRules.ValidateTypeName(name));
+    }
+
+    [Fact]
+    public void ValidateTypeName_AcceptsNameOfMaxLength()
+    {
+        Assert.Empty(EquipmentRules.ValidateTypeName(new string('x', EquipmentRules.TypeNameMaxLength)));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(EquipmentRules.TypeNameMaxLength + 1)]
+    public void ValidateTypeName_RejectsEmptyOrTooLongName(int length)
+    {
+        Assert.Contains("name", EquipmentRules.ValidateTypeName(new string('x', length)).Keys);
+    }
+}

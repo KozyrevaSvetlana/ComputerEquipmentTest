@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ComputerEquipment.Api</RootNamespace>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <!-- XML-комментарии попадают в ComputerEquipment.Api.xml; без комментария у публичного члена будет предупреждение CS1591. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <UserSecretsId>51bc4ef1-6377-4c91-b1ee-dc1a7c34c01e</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <!-- Нужен только для команд dotnet ef (миграции), в публикацию не попадает. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Тесты проверяют внутренние классы (например, EquipmentQuery). -->
+    <InternalsVisibleTo Include="ComputerEquipment.Api.Tests" />
+  </ItemGroup>
+
+</Project>
