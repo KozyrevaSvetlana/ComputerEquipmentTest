@@ -16,12 +16,39 @@ docker compose up --build
 
 Откройте http://localhost:8080. Поднимутся PostgreSQL 18 и сервер. При старте сервер применяет миграции и заполняет начальные данные.
 
+Если Docker Hub недоступен (ошибки `registry-1.docker.io ... EOF` или `TLS handshake timeout`), возьмите образ PostgreSQL с зеркала. Проще всего создать в корне репозитория файл `.env` — Docker Compose читает его сам, а в git он не попадает (указан в `.gitignore`):
+
+```
+POSTGRES_IMAGE=mirror.gcr.io/library/postgres:18
+```
+
+Или задать переменную только для текущего окна PowerShell:
+
+```powershell
+$env:POSTGRES_IMAGE="mirror.gcr.io/library/postgres:18"
+docker compose up --build
+```
+
 Перед публикацией сервера при сборке образа запускаются юнит-тесты. Если хоть один тест упадет, сборка остановится и контейнер не запустится — результат тестов виден в выводе `docker compose up --build`. Чтобы собрать образ без тестов (например, для быстрой проверки верстки):
 
 ```bash
 docker compose build --build-arg SKIP_TESTS=true
 docker compose up
 ```
+
+Полезные команды:
+
+| Что нужно | Команда |
+|---|---|
+| Запустить в фоне | `docker compose up --build -d` |
+| Логи сервера | `docker compose logs -f api` |
+| Остановить | `docker compose down` |
+| Остановить и удалить базу (начать с чистыми данными) | `docker compose down -v` |
+
+Если не запускается:
+- `open //./pipe/docker_engine: The system cannot find the file specified` — не запущен Docker Desktop. Запустите его и дождитесь статуса Engine running.
+- `Docker Desktop - Unexpected WSL error` — выполните `wsl --shutdown` и снова запустите Docker Desktop; если не помогло — перезагрузка и `wsl --update` (от администратора).
+- `port is already allocated` на 5432 — порт занят локальным PostgreSQL. Остановите службу `postgresql-x64-18` или замените в `docker-compose.yml` `"5432:5432"` на `"5433:5432"` (сервер в контейнере подключается к БД по внутреннему адресу `db:5432`, его это не затронет).
 
 ### Вариант 2. Локально (Visual Studio / dotnet CLI)
 
@@ -161,7 +188,7 @@ dotnet ef migrations script --idempotent --project src/ComputerEquipment.Api -o 
 
 ## Тесты
 
-Юнит-тесты лежат в `tests/ComputerEquipment.Api.Tests` (xUnit). База данных и Docker для них не нужны.
+Юнит-тесты лежат в `tests/ComputerEquipment.Api.Tests` (xUnit), всего 58 тестов. База данных и Docker для них не нужны. У каждого теста есть XML-комментарий с описанием того, что он проверяет.
 
 ```bash
 dotnet test
@@ -179,13 +206,19 @@ dotnet test
 | `AppDbContextModelTests` | модель EF Core: уникальные индексы, `xmin` как маркер версии, CHECK-ограничения, запрет удаления используемого типа и **соответствие миграций модели** |
 | `SeedDataTests` | начальные данные: 3–5 типов, 50 записей, уникальные номера, все записи проходят валидацию |
 
-Логика сортировки и пагинации вынесена в `Endpoints/EquipmentQuery.cs`, поэтому тесты выполняют ее на обычных коллекциях без базы.
+Логика сортировки и пагинации вынесена в `Endpoints/EquipmentQuery.cs`, поэтому тесты выполняют ее на обычных коллекциях без базы. Тесты модели читают полную design-time модель EF Core (`IDesignTimeModel`): в облегченной runtime-модели `context.Model` нет CHECK-ограничений.
 
 ## Структура
 
 ```
+ComputerEquipment.slnx       решение (API + тесты)
+Dockerfile                   сборка образа: restore → тесты → publish
+docker-compose.yml           PostgreSQL 18 + сервер
+.config/dotnet-tools.json    локальный инструмент dotnet-ef
+.env                         локальные настройки Docker Compose (не в git, создается по желанию)
 src/ComputerEquipment.Api/
   Program.cs                 настройка приложения
+  ComputerEquipment.Api.http примеры запросов к API
   Domain/                    сущности и правила валидации
   Data/                      DbContext, начальные данные
   Data/Migrations/           миграции EF Core
@@ -209,8 +242,13 @@ tests/ComputerEquipment.Api.Tests/  юнит-тесты (xUnit)
 9. **Юнит-тесты.** Проект `tests/ComputerEquipment.Api.Tests` (xUnit): правила валидации, построение запроса, распознавание ошибок PostgreSQL, модель EF Core и соответствие миграций, начальные данные.
 10. **Размер страницы.** По умолчанию таблица показывает 10 записей на странице (`paging.pageSize` в `wwwroot/js/app.js`).
 11. **Тесты в Docker.** При сборке образа перед `dotnet publish` выполняется `dotnet test`; упавший тест останавливает сборку. Пропустить тесты можно аргументом `SKIP_TESTS=true`.
+12. **Версии EF Core.** В API-проект добавлены явные ссылки на `Microsoft.EntityFrameworkCore` и `Microsoft.EntityFrameworkCore.Relational` 10.0.13. Без них проект тестов получал EF Core 10.0.4 от Npgsql, а API был собран с 10.0.13, и тесты не собирались.
+13. **Исправления тестов.** Тесты модели переведены на design-time модель (`IDesignTimeModel`), иначе проверка CHECK-ограничений падала. Ко всем тестам добавлены описания.
+14. **Инструкция по секретам.** В README добавлен раздел «Подключение к базе данных»: как положить строку подключения в user-secrets через CLI и Visual Studio.
+15. **Запуск в Docker.** Образ PostgreSQL можно взять с зеркала через переменную `POSTGRES_IMAGE` (в том числе из локального `.env`), если Docker Hub недоступен. В строку подключения контейнера добавлен `GSS Encryption Mode=Disable`: без него Npgsql пытался загрузить `libgssapi_krb5.so.2`, которой нет в образе `aspnet`. В README добавлены команды Docker и решения типичных ошибок запуска.
 
 ## Примечания
 
 - DevExtreme подключается с CDN. Без коммерческой лицензии библиотека показывает предупреждение об ознакомительной версии — на работу это не влияет.
 - Цвета и шрифты интерфейса вынесены в CSS-переменные в начале `wwwroot/css/site.css`.
+- Для клиента нужен интернет: DevExtreme, jQuery и шрифт Open Sans загружаются с CDN.

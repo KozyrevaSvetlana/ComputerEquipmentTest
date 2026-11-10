@@ -1,6 +1,8 @@
 services:
   db:
-    image: postgres:18
+    # Образ берется с Docker Hub. Если он недоступен, задайте зеркало переменной окружения:
+    #   PowerShell: $env:POSTGRES_IMAGE="mirror.gcr.io/library/postgres:18"
+    image: ${POSTGRES_IMAGE:-postgres:18}
     environment:
       POSTGRES_DB: equipment
       POSTGRES_USER: postgres
@@ -19,7 +21,7 @@ services:
   api:
     build: .
     environment:
-      ConnectionStrings__Default: "Host=db;Port=5432;Database=equipment;Username=postgres;Password=postgres"
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=equipment;Username=postgres;Password=postgres;GSS Encryption Mode=Disable"
     ports:
       - "8080:8080"
     depends_on:

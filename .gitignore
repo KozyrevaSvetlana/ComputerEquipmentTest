@@ -4,3 +4,8 @@ obj/
 .idea/
 *.user
 *.suo
+
+# Локальные настройки Docker Compose
+.env
+
+Claude outputs/
